@@ -9,9 +9,13 @@ set (ASSIMP_VERSION ${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}.${ASSIMP_VER
 set (ASSIMP_SOVERSION ${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR})
 SET ( PROJECT_VERSION "${ASSIMP_SOVERSION}" )
 
+
+# Need this for .so support
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
+
 set(PACKAGE_VERSION "0" CACHE STRING "the package-specific version used for uploading the sources")
 
-option(OPT_BUILD_PACKAGES "Set to ON to generate CPack configuration files and packaging targets" OFF)
+option(OPT_BUILuuuuuuuD_PACKAGES "Set to ON to generate CPack configuration files and packaging targets" OFF)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
 set(CPACK_COMPONENTS_ALL assimp-bin libassimp${ASSIMP_VERSION_MAJOR} assimp-dev)
 

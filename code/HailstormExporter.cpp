@@ -170,14 +170,7 @@ void HailstormExporter::WriteShadingParam( const Surface& surface,
 
     if ( surface.texture.empty() )
     {
-        mOutput << "r=\"" << surface.color.r << "\" "
-                << "g=\"" << surface.color.g << "\" "
-                << "b=\"" << surface.color.b << "\" ";
-
-        if ( surface.color.a < 1.0 )
-        {
-                mOutput << "a=\"" << surface.color.a << "\" ";
-        }
+        Write( surface.color );
     }
     else
     {
@@ -329,7 +322,7 @@ void HailstormExporter::WriteSceneGeometry()
     mOutput << startstr << "<meshes>" << endstr;
 	PushTag();
 
-	for( size_t a = 0; a < mScene->mNumMeshes; ++a )
+	for ( size_t a = 0; a < mScene->mNumMeshes; ++a )
     {
 		WriteGeometry( a );
     }
