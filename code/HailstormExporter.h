@@ -128,8 +128,9 @@ protected:
     Surface ambient, diffuse, specular, emissive, reflective, normal;
     float shininess; /// specular exponent
     aiShadingMode shadingMode;
+    bool hasShininess;
 
-    Material() { shininess = 16.0f; shadingMode = aiShadingMode_Phong; }
+    Material() { shininess = 16.0f; hasShininess = false; shadingMode = aiShadingMode_Phong; }
   };
 
   std::vector<Material> materials;

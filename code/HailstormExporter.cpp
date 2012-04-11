@@ -170,7 +170,7 @@ void HailstormExporter::WriteShadingParam( const Surface& surface,
 
     if ( surface.texture.empty() )
     {
-        Write( surface.color );
+        mOutput << Write( surface.color );
     }
     else
     {
@@ -241,7 +241,11 @@ void HailstormExporter::WriteMaterials()
                              0 );
 
         // Also get dat shiny key
-        pMat->Get( AI_MATKEY_SHININESS, materials[a].shininess);
+        if ( pMat->Get( AI_MATKEY_SHININESS, materials[a].shininess) == aiReturn_SUCCESS )
+        {
+            materials[a].hasShininess = true;
+        }
+
         pMat->Get( AI_MATKEY_SHADING_MODEL, materials[a].shadingMode );
     }
 
@@ -282,7 +286,9 @@ void HailstormExporter::WriteMaterials()
                 WriteShadingParam( mat.diffuse,  "diffuse",  mat.name  );
             }
 
-            if ( mat.emissive.enabled )
+            if ( mat.emissive.enabled == false &&
+                 mat.emissive.color.r == 0     && mat.emissive.color.g == 0 &&
+                 mat.emissive.color.b == 0 )
             {
                 WriteShadingParam( mat.emissive, "emissive", mat.name );
             }
@@ -296,12 +302,8 @@ void HailstormExporter::WriteMaterials()
             {
                 WriteShadingParam( mat.normal, "normal", mat.name );
             }
-
-            mOutput << startstr
-                    << "<shiny v=\"" << mat.shininess << "\" "
-                    << "/>"
-                    << endstr;
-
+            
+            // TODO don't forget shinines
 
             PopTag();
             mOutput << startstr << "</shading>" << endstr;
@@ -384,7 +386,7 @@ void HailstormExporter::WriteGeometry( size_t meshIndex )
 
     mOutput << "uv=\""      << pMesh->GetNumUVChannels()    << "\" "
             << "color=\""   << pMesh->GetNumColorChannels() << "\" "
-            << " />" << endstr;
+            << "/>" << endstr;
     PushTag();
 
 	// Open the vertices array
@@ -499,15 +501,7 @@ void HailstormExporter::WriteNode( const aiNode* pNode )
 
     if (! mat.IsIdentity() )
     {
-        // Write the entire transformation matrix out, and then also write out
-        // it's individual components
-        //
-        // TODO: Can we just drop the matrix now that we have the parts?
-        mOutput << startstr
-                << "<matrix " << Write( mat ) << "/>"
-                << endstr;
-
-        // Write out decomposed matrix
+        // Write out the transformation aspect of the model
         aiVector3D scale, translation;
         aiQuaternion rotation;
         mat.Decompose( scale, rotation, translation );
@@ -533,7 +527,7 @@ void HailstormExporter::WriteNode( const aiNode* pNode )
 
 		mOutput << startstr
                 << "<mesh "
-                << "id=\""  << GetMeshId( pNode->mMeshes[a] )       << "\" "
+                << "name=\""  << GetMeshId( pNode->mMeshes[a] )       << "\" "
                 << "mat=\"" << materials[mesh->mMaterialIndex].name << "\" "
                 << "/>" << endstr;
 	}
