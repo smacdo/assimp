@@ -144,6 +144,13 @@ protected:
   void WriteShadingParam( const Surface& surface,
                           const std::string& paramName,
                           const std::string& matName );
+
+  std::string GetShadingName( aiShadingMode shadingMode ) const;
+  std::string Write( const aiVector3D& vec, const std::string& prefix="" ) const;
+  std::string Write( const aiQuaternion& q, const std::string& prefix="" ) const;
+  std::string Write( const aiMatrix4x4& m,  const std::string& prefix="" ) const;
+  std::string Write( const aiColor4D& c,    const std::string& prefix="" ) const;
+  std::string WriteUV( const aiVector3D& v, unsigned int index ) const;
 };
 
 }

@@ -271,44 +271,10 @@ void HailstormExporter::WriteMaterials()
                     << endstr;
             PushTag();
 
-            // Convert the shading mode into a string that we can write out
-            std::string shadingName;
-
-            switch ( mat.shadingMode )
-            {
-                case aiShadingMode_Flat:
-                    shadingName = "flat";
-                    break;
-                case aiShadingMode_Gouraud:
-                    shadingName = "gouraud";
-                    break;
-                case aiShadingMode_Phong:
-                    shadingName = "phong";
-                    break;
-                case aiShadingMode_Blinn:
-                    shadingName = "blinn";
-                    break;
-                case aiShadingMode_Toon:
-                    shadingName = "toon";
-                    break;
-                case aiShadingMode_OrenNayar:
-                case aiShadingMode_Minnaert:
-                case aiShadingMode_CookTorrance:
-                case aiShadingMode_Fresnel:
-                    assert( false && "Shading mode not supported yet" );
-                    break;
-                case aiShadingMode_NoShading:
-                    shadingName = "none";
-                    break;
-                default:
-                    shadingName = "phong";
-                    break;
-            }
-
             // Write out the lighting model
             mOutput << startstr
                     << "<shading "
-                    << "model=\""  << shadingName << "\" "
+                    << "model=\""  << GetShadingName( mat.shadingMode ) << "\" "
                     << "/>"
                     << endstr;
             PushTag();
@@ -441,49 +407,33 @@ void HailstormExporter::WriteGeometry( size_t meshIndex )
         mOutput << "<v ";
 
         // Write position
-        mOutput << "x=\"" << pMesh->mVertices[i][0] << "\" "
-                << "y=\"" << pMesh->mVertices[i][1] << "\" "
-                << "z=\"" << pMesh->mVertices[i][2] << "\" ";
+        mOutput << Write( pMesh->mVertices[i] );
 
         // Write normals, if we have them
         if ( pMesh->HasNormals() )
         {
-            mOutput << "nx=\"" << pMesh->mNormals[i][0] << "\" "
-                    << "ny=\"" << pMesh->mNormals[i][1] << "\" "
-                    << "nz=\"" << pMesh->mNormals[i][2] << "\" ";
+            mOutput << Write( pMesh->mNormals[i], "n" );
         }
 
         // Write tangent info
         if ( pMesh->HasTangentsAndBitangents() )
         {
-            mOutput << "bx=\"" << pMesh->mBitangents[i][0] << "\" "
-                    << "by=\"" << pMesh->mBitangents[i][1] << "\" "
-                    << "bz=\"" << pMesh->mBitangents[i][2] << "\" "
-                    << "tx=\"" << pMesh->mTangents[i][0]   << "\" "
-                    << "ty=\"" << pMesh->mTangents[i][1]   << "\" "
-                    << "tz=\"" << pMesh->mTangents[i][2]   << "\" ";
+            mOutput << Write( pMesh->mBitangents[i], "b" )
+                    << Write( pMesh->mTangents[i], "t" );
         }
 
         // Write texture coordinates
         for ( size_t j = 0; j < pMesh->GetNumUVChannels(); ++j )
         {
             assert( pMesh->HasTextureCoords( j ) );
-
-            mOutput << "u"    << boost::lexical_cast<std::string>(j)
-                    << "= \"" << pMesh->mTextureCoords[j][i][0]
-                    << "\" "
-                    << "v"    << boost::lexical_cast<std::string>(j)
-                    << "= \"" << pMesh->mTextureCoords[j][i][1]
-                    << "\" ";
+            mOutput << WriteUV( pMesh->mTextureCoords[j][i], j );
+            
         }
 
         // Write vertex color
         if ( pMesh->HasVertexColors( 0 ) )
         {
-            mOutput << "vr = \"" << pMesh->mColors[0][i][0] << "\" "
-                    << "vg = \"" << pMesh->mColors[0][i][1] << "\" "
-                    << "vb = \"" << pMesh->mColors[0][i][2] << "\" "
-                    << "va = \"" << pMesh->mColors[0][i][3] << "\" ";
+            mOutput << Write( pMesh->mColors[0][i] );
         }
 
         // Wrap it up
@@ -556,24 +506,12 @@ void HailstormExporter::WriteNode( const aiNode* pNode )
 
     if (! mat.IsIdentity() )
     {
-        mOutput << startstr << "<mat4 "
-                << "m00=\"" << mat.a1 << "\" "
-                << "m01=\"" << mat.a2 << "\" "
-                << "m02=\"" << mat.a3 << "\" "
-                << "m03=\"" << mat.a4 << "\" "
-                << "m10=\"" << mat.b1 << "\" "
-                << "m11=\"" << mat.b2 << "\" "
-                << "m12=\"" << mat.b3 << "\" "
-                << "m13=\"" << mat.b4 << "\" "
-                << "m20=\"" << mat.c1 << "\" "
-                << "m21=\"" << mat.c2 << "\" "
-                << "m22=\"" << mat.c3 << "\" "
-                << "m23=\"" << mat.c4 << "\" "
-                << "m30=\"" << mat.d1 << "\" "
-                << "m31=\"" << mat.d2 << "\" "
-                << "m32=\"" << mat.d3 << "\" "
-                << "m33=\"" << mat.d4 << "\" "
-                << "/>"
+        // Write the entire transformation matrix out, and then also write out
+        // it's individual components
+        //
+        // TODO: Can we just drop the matrix now that we have the parts?
+        mOutput << startstr
+                << "<matrix " << Write( mat ) << "/>"
                 << endstr;
 
         // Write out decomposed matrix
@@ -581,26 +519,16 @@ void HailstormExporter::WriteNode( const aiNode* pNode )
         aiQuaternion rotation;
         mat.Decompose( scale, rotation, translation );
 
-        mOutput << startstr << "<scale "
-                << "x=\"" << scale.x << "\" "
-                << "y=\"" << scale.y << "\" "
-                << "z=\"" << scale.z << "\" "
-                << "/>"
+        mOutput << startstr
+                << "<scale " << Write( scale ) << "/>"
                 << endstr;
 
-        mOutput << startstr << "<translation "
-                << "x=\"" << translation.x << "\" "
-                << "y=\"" << translation.y << "\" "
-                << "z=\"" << translation.z << "\" "
-                << "/>"
+        mOutput << startstr
+                << "<translation " << Write( translation ) << "/>"
                 << endstr;
 
-        mOutput << startstr << "<rotation "
-                << "w=\"" << rotation.w << "\" "
-                << "x=\"" << rotation.x << "\" "
-                << "y=\"" << rotation.y << "\" "
-                << "z=\"" << rotation.z << "\" "
-                << "/>"
+        mOutput << startstr
+                << "<rotation " << Write( rotation ) << "/>"
                 << endstr;
     }
 
@@ -625,6 +553,141 @@ void HailstormExporter::WriteNode( const aiNode* pNode )
 
 	PopTag();
 	mOutput << startstr << "</node>" << endstr;
+}
+
+/**
+ * Takes a shading mode enumeration value, and returns it in string form
+ */
+std::string HailstormExporter::GetShadingName( aiShadingMode shadingMode ) const
+{
+    std::string shadingName;
+
+    switch ( shadingMode )
+    {
+        case aiShadingMode_Flat:
+            shadingName = "flat";
+            break;
+        case aiShadingMode_Gouraud:
+            shadingName = "gouraud";
+            break;
+        case aiShadingMode_Phong:
+            shadingName = "phong";
+            break;
+        case aiShadingMode_Blinn:
+            shadingName = "blinn";
+            break;
+        case aiShadingMode_Toon:
+            shadingName = "toon";
+            break;
+        case aiShadingMode_OrenNayar:
+        case aiShadingMode_Minnaert:
+        case aiShadingMode_CookTorrance:
+        case aiShadingMode_Fresnel:
+            assert( false && "Shading mode not supported yet" );
+            break;
+        case aiShadingMode_NoShading:
+            shadingName = "none";
+            break;
+        default:
+            shadingName = "phong";
+            break;
+    }
+
+    return shadingName;
+}
+
+/**
+ * Returns a Vec3 suitable for export
+ */
+std::string HailstormExporter::Write( const aiVector3D& vec,
+                                      const std::string& prefix ) const
+{
+    std::ostringstream ss;
+
+    ss << prefix << "x=\"" << vec[0] << "\" "
+       << prefix << "y=\"" << vec[1] << "\" "
+       << prefix << "z=\"" << vec[2] << "\" ";
+
+    return ss.str();
+}
+
+/**
+ * Returns a Matrix4x4 suitable for export
+ */
+std::string HailstormExporter::Write( const aiQuaternion& quat,
+                                      const std::string& prefix ) const
+{
+    std::ostringstream ss;
+
+    ss << prefix << "w=\"" << quat.w << "\" "
+       << prefix << "x=\"" << quat.x << "\" "
+       << prefix << "y=\"" << quat.y << "\" "
+       << prefix << "z=\"" << quat.z << "\" ";
+
+    return ss.str();
+}
+
+/**
+ * Returns a Matrix4x4 suitable for export
+ */
+std::string HailstormExporter::Write( const aiMatrix4x4& mat,
+                                      const std::string& prefix ) const
+{
+    std::ostringstream ss;
+
+    ss << prefix << "m00=\"" << mat.a1 << "\" "
+       << prefix << "m01=\"" << mat.a2 << "\" "
+       << prefix << "m02=\"" << mat.a3 << "\" "
+       << prefix << "m03=\"" << mat.a4 << "\" "
+       << prefix << "m10=\"" << mat.b1 << "\" "
+       << prefix << "m11=\"" << mat.b2 << "\" "
+       << prefix << "m12=\"" << mat.b3 << "\" "
+       << prefix << "m13=\"" << mat.b4 << "\" "
+       << prefix << "m20=\"" << mat.c1 << "\" "
+       << prefix << "m21=\"" << mat.c2 << "\" "
+       << prefix << "m22=\"" << mat.c3 << "\" "
+       << prefix << "m23=\"" << mat.c4 << "\" "
+       << prefix << "m30=\"" << mat.d1 << "\" "
+       << prefix << "m31=\"" << mat.d2 << "\" "
+       << prefix << "m32=\"" << mat.d3 << "\" "
+       << prefix << "m33=\"" << mat.d4 << "\" ";
+
+    return ss.str();
+}
+
+/**
+ * Returns a Color4 suitable for export
+ */
+std::string HailstormExporter::Write( const aiColor4D& c,
+                                      const std::string& prefix ) const
+{
+    std::ostringstream ss;
+
+    ss << prefix << "r=\"" << c.r << "\" "
+       << prefix << "g=\"" << c.g << "\" "
+       << prefix << "b=\"" << c.b << "\" ";
+
+    if ( c.a < 1.0f )
+    {
+        ss << prefix << "a=\"" << c.a << "\" ";
+    }
+
+    return ss.str();
+}
+
+/**
+ * Returns a texture coordinate suitable for export
+ */
+std::string HailstormExporter::WriteUV ( const aiVector3D& v,
+                                         unsigned int index ) const
+{
+    std::ostringstream ss;
+
+    ss << "u" << boost::lexical_cast<std::string>( index )
+              << "=\"" << v[0] << "\" "
+       << "v" << boost::lexical_cast<std::string>( index )
+              << "=\"" << v[1] << "\" ";
+    return ss.str();
 }
 
 #endif
