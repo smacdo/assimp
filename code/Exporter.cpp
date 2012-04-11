@@ -74,6 +74,7 @@ void ExportSceneCollada(const char*,IOSystem*, const aiScene*);
 void ExportSceneObj(const char*,IOSystem*, const aiScene*);
 void ExportSceneSTL(const char*,IOSystem*, const aiScene*);
 void ExportScenePly(const char*,IOSystem*, const aiScene*);
+void ExportSceneHailstorm( const char*, IOSystem*, const aiScene* );
 void ExportScene3DS(const char*, IOSystem*, const aiScene*) {}
 
 // ------------------------------------------------------------------------------------------------
@@ -98,6 +99,18 @@ Exporter::ExportFormatEntry gExporters[] =
 	Exporter::ExportFormatEntry( "ply", "Stanford Polygon Library", "ply" , &ExportScenePly, 
 		aiProcess_PreTransformVertices
 	),
+#endif
+
+#ifndef ASSIMP_BUILD_NO_HAILSTORM_EXPORTER
+    Exporter::ExportFormatEntry( "model",
+                                 "Hailstorm Simple Model Format",
+                                 "model",
+                                 &ExportSceneHailstorm,
+                                 aiProcess_Triangulate |
+                                 aiProcess_GenSmoothNormals |
+                                 aiProcess_MakeLeftHanded |
+                                 aiProcess_GenUVCoords
+    ),
 #endif
 
 //#ifndef ASSIMP_BUILD_NO_3DS_EXPORTER

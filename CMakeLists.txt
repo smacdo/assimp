@@ -141,7 +141,7 @@ IF ( BUILD_ASSIMP_TOOLS )
 	ADD_SUBDIRECTORY( tools/assimp_cmd/ )
 ENDIF ( BUILD_ASSIMP_TOOLS )
 
-SET ( BUILD_ASSIMP_SAMPLES ON CACHE BOOL
+SET ( BUILD_ASSIMP_SAMPLES OFF CACHE BOOL
 	"If the official samples are built as well (needs Glut)."
 )
 

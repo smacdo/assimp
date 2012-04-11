@@ -181,6 +181,12 @@ SET( BVH_SRCS
 )
 SOURCE_GROUP( BVH FILES ${BVH_SRCS})
 
+SET( Hailstorm_SRCS
+        HailstormExporter.h
+        HailstormExporter.cpp
+)
+SOURCE_GROUP( Hailstorm FILES ${Hailstorm_SRCS} )
+
 SET( Collada_SRCS
 	ColladaHelper.h
 	ColladaLoader.cpp
@@ -602,6 +608,7 @@ ADD_LIBRARY( assimp STATIC
 	${ASE_SRCS}
 	${B3D_SRCS}
 	${BVH_SRCS}
+    ${Hailstorm_SRCS}
 	${Collada_SRCS}
 	${DXF_SRCS}
 	${CSM_SRCS}
@@ -663,6 +670,7 @@ ADD_LIBRARY( assimp SHARED
 	${ASE_SRCS}
 	${B3D_SRCS}
 	${BVH_SRCS}
+    ${Hailstorm_SRCS}
 	${Collada_SRCS}
 	${DXF_SRCS}
 	${CSM_SRCS}
